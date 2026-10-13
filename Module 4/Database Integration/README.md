@@ -1,21 +1,22 @@
-# Database Integration Assignment Starter
+# Database Integration
+Replaces the post in-memory repository with PostgreSQL through Prisma while preserving its asynchronous contract.
 
-Replace the in-memory repository implementation with PostgreSQL through Prisma. The starter already uses an asynchronous repository contract so services and controllers can remain stable during the swap.
-
-## Run
-
+## Setup
+1. Run `npm install`.
+2. Copy `.env.example` to `.env` and configure a local PostgreSQL `DATABASE_URL`. Never commit `.env`.
+3. Run:
 ```bash
-npm install
+npm run prisma:validate
+npm run prisma:migrate
+npm run prisma:generate
+npm run db:seed
 npm start
 ```
+The seed is repeatable and does not delete data. Only run `npx prisma migrate reset` on a disposable local database you intend to erase.
 
-## Prisma preparation
+## API
+- `GET /posts`, `GET /posts/:id`
+- `POST /posts` (provide a valid `authorId`)
+- `PATCH /posts/:id`, `DELETE /posts/:id`
 
-Copy `.env.example` to `.env` with a local PostgreSQL URL. The schema is intentionally incomplete for the assignment.
-
-```bash
-npm run prisma:format
-npm run prisma:validate
-```
-
-Read the platform question before editing. Do not add platform-only `question.md`, answer files, tests, or specs to this repository. Never commit `.env` or real credentials.
+Prisma access stays in the database module and repository. Services/controllers do not import Prisma.

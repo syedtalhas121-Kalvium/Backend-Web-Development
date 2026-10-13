@@ -1,36 +1,31 @@
-const seed = require('../data/postSeed');
-
-// Starter implementation: same async contract, temporary in-memory storage.
-const posts = seed.map((post) => ({ ...post }));
-let nextId = posts.reduce((max, post) => Math.max(max, post.id), 0) + 1;
-
+const prisma = require('../db/prisma');
 async function findAll() {
-  return posts.map((post) => ({ ...post }));
+  return prisma.post.findMany({ orderBy: { id: 'asc' } });
 }
-
 async function findById(id) {
-  return posts.find((post) => post.id === Number(id)) || null;
+  const postId = Number(id);
+  if (!Number.isSafeInteger(postId) || postId <= 0) return null;
+  return prisma.post.findUnique({ where: { id: postId } });
 }
-
 async function create(fields) {
-  const post = { id: nextId++, title: fields.title, body: fields.body || '', authorId: fields.authorId };
-  posts.push(post);
-  return { ...post };
+  return prisma.post.create({ data: {
+    title: fields.title, body: fields.body || '', authorId: Number(fields.authorId)
+  }});
 }
-
 async function update(id, patch) {
-  const post = posts.find((candidate) => candidate.id === Number(id));
-  if (!post) return null;
-  if (patch.title !== undefined) post.title = patch.title;
-  if (patch.body !== undefined) post.body = patch.body;
-  return { ...post };
+  const postId = Number(id);
+  if (!Number.isSafeInteger(postId) || postId <= 0) return null;
+  if (!(await prisma.post.findUnique({ where: { id: postId } }))) return null;
+  return prisma.post.update({ where: { id: postId }, data: {
+    ...(patch.title !== undefined ? { title: patch.title } : {}),
+    ...(patch.body !== undefined ? { body: patch.body } : {})
+  }});
 }
-
 async function remove(id) {
-  const index = posts.findIndex((post) => post.id === Number(id));
-  if (index === -1) return false;
-  posts.splice(index, 1);
-  return true;
+  const postId = Number(id);
+  if (!Number.isSafeInteger(postId) || postId <= 0) return false;
+  if (!(await prisma.post.findUnique({ where: { id: postId } }))) return false;
+  try { await prisma.post.delete({ where: { id: postId } }); return true; }
+  catch (error) { if (error && error.code === 'P2025') return false; throw error; }
 }
-
 module.exports = { findAll, findById, create, update, remove };
