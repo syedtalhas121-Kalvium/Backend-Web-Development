@@ -1,0 +1,24 @@
+{
+  "name": "authentication-fundamentals",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kalvium Authentication Fundamentals assignment",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "prisma:migrate": "prisma migrate dev",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.9.0"
+  }
+}
