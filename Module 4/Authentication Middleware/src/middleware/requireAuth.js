@@ -10,7 +10,7 @@ const unauthorized = {
 module.exports = function requireAuth(req, res, next) {
   // Extract only a non-empty Bearer token. Other schemes are rejected.
   const authHeader = req.headers.authorization ?? '';
-  const match = /^Bearer ([^\\s]+)$/i.exec(authHeader);
+  const match = /^Bearer ([^\s]+)$/i.exec(authHeader);
   const token = match ? match[1] : null;
 
   if (!token) {
