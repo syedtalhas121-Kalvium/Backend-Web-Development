@@ -21,7 +21,7 @@ function findById(id) {
 }
 
 function create(fields) {
-  const record = { id: nextId++, ...fields };
+  const record = { ...fields, id: nextId++ };
   posts.set(record.id, record);
   return { ...record };
 }
