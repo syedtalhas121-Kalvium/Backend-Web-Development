@@ -1,5 +1,9 @@
 'use strict';
 
+// ─── GIVEN FILE — do not modify ───────────────────────────────────────────────
+// Automated test suite for LU 62 — Caching with Redis
+// Redis must be running before: npm test
+
 require('dotenv').config();
 
 const http = require('node:http');
@@ -14,6 +18,7 @@ async function test(name, fn) {
 }
 
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'Assertion failed'); }
+
 function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function request(method, path, body) {
@@ -40,8 +45,9 @@ function request(method, path, body) {
 }
 
 async function main() {
+  // Clear cache key before tests
   try {
-    const { cacheDel } = require('../src/cache');
+    const { cacheGet, cacheDel } = require('../src/cache');
     await cacheDel('feed:trending');
   } catch {}
 
@@ -67,13 +73,17 @@ async function main() {
     const t0 = Date.now();
     const res = await request('GET', '/feed');
     hitMs = Date.now() - t0;
-    assert(res.headers['x-cache'] === 'HIT', `Expected X-Cache: HIT, got ${res.headers['x-cache']}`);
+    const xCache = res.headers['x-cache'];
+    assert(xCache === 'HIT', `Expected X-Cache: HIT, got X-Cache: ${xCache}. Make sure you set res.set('X-Cache', 'HIT') on cache hits.`);
   });
 
   console.log('\nTest 3: Cache hit is faster than cache miss');
   await test('Hit response time < miss response time', () => {
-    assert(hitMs < missMs, `Expected hit (${hitMs}ms) faster than miss (${missMs}ms)`);
-    assert(hitMs < 30, `Expected hit under 30ms, got ${hitMs}ms`);
+    // A hard ceiling, not just hitMs < missMs — without that ceiling, two
+    // uncached ~100ms DB calls can randomly land in either order and pass
+    // this test by pure timing noise even with no caching implemented.
+    assert(hitMs < missMs, `Expected hit (${hitMs}ms) to be faster than miss (${missMs}ms). Ensure the cache is being read on the second request.`);
+    assert(hitMs < 30, `Expected hit response under 30ms (a real cache read), got ${hitMs}ms. This usually means the cache isn't actually being read on the second request.`);
     console.log(`    miss: ${missMs}ms  →  hit: ${hitMs}ms`);
   });
 
@@ -82,7 +92,8 @@ async function main() {
     await request('POST', '/posts', { title: 'Cache Invalidation Test' });
     await wait(50);
     const res = await request('GET', '/feed');
-    assert(res.headers['x-cache'] === 'MISS', `Expected MISS after POST, got ${res.headers['x-cache']}`);
+    const xCache = res.headers['x-cache'];
+    assert(xCache === 'MISS', `Expected X-Cache: MISS after POST /posts (cache should be invalidated), got X-Cache: ${xCache}`);
   });
 
   await wait(50);
@@ -90,15 +101,19 @@ async function main() {
   console.log('\nTest 5: Feed re-populates cache after invalidation');
   await test('GET /feed after invalidation miss returns X-Cache: HIT on next request', async () => {
     const res = await request('GET', '/feed');
-    assert(res.headers['x-cache'] === 'HIT', `Expected HIT, got ${res.headers['x-cache']}`);
+    const xCache = res.headers['x-cache'];
+    assert(xCache === 'HIT', `Expected X-Cache: HIT (cache re-populated after miss), got X-Cache: ${xCache}`);
   });
 
+  // Cleanup
   try {
     const { cacheDel } = require('../src/cache');
     await cacheDel('feed:trending');
   } catch {}
 
   await new Promise(r => server.close(r));
+
+  // Close Redis if possible
   try {
     const cache = require('../src/cache');
     if (cache.redis && typeof cache.redis.quit === 'function') await cache.redis.quit();
