@@ -11,11 +11,18 @@ const posts = [
 
 let nextId = 4;
 
+/**
+ * Simulates a slow database read (100ms delay).
+ * In production this would be a complex SQL JOIN with ranking logic.
+ */
 async function getTrendingPosts() {
-  await new Promise(r => setTimeout(r, 100));
+  await new Promise(r => setTimeout(r, 100));   // artificial 100ms DB latency
   return [...posts].sort((a, b) => b.score - a.score);
 }
 
+/**
+ * Creates a new post (fast write).
+ */
 async function createPost(data) {
   const post = { id: nextId++, title: data.title || 'Untitled', score: 0 };
   posts.push(post);
