@@ -63,7 +63,7 @@ async function main() {
   const io = initSocket(httpServer);
 
   if (!io) {
-    console.log('\\n  ✗ initSocket() returned null, implement src/socket.js first\\n');
+    console.log('\n  ✗ initSocket() returned null, implement src/socket.js first\n');
     console.log(`Results: 0 passed, 5 failed`);
     process.exit(1);
   }
@@ -75,7 +75,7 @@ async function main() {
   const origLog = console.log;
   console.log = (...args) => { logs.push(args.join(' ')); };
 
-  console.log('\\nTest 1: A connected client receives a socket.id');
+  console.log('\nTest 1: A connected client receives a socket.id');
   await test('Client connects and gets a valid socket.id', async () => {
     const a = await connectClient(URL);
     assert(typeof a.id === 'string' && a.id.length > 0, `socket.id should be a non-empty string, got: ${a.id}`);
@@ -83,7 +83,7 @@ async function main() {
     await wait(100);
   });
 
-  console.log('\\nTest 2: Client in a room receives commentAdded');
+  console.log('\nTest 2: Client in a room receives commentAdded');
   await test('Client that joined the room receives commentAdded after newComment', async () => {
     const a = await connectClient(URL);
     a.emit('joinRoom', { room: 'post-42' });
@@ -98,7 +98,7 @@ async function main() {
     await wait(100);
   });
 
-  console.log('\\nTest 3: Second client in same room also receives commentAdded');
+  console.log('\nTest 3: Second client in same room also receives commentAdded');
   await test('Second client in the room also receives the commentAdded event', async () => {
     const a = await connectClient(URL);
     const b = await connectClient(URL);
@@ -117,7 +117,7 @@ async function main() {
     await wait(100);
   });
 
-  console.log('\\nTest 4: Client that left the room does NOT receive commentAdded');
+  console.log('\nTest 4: Client that left the room does NOT receive commentAdded');
   await test('Client that left the room does not receive subsequent commentAdded events', async () => {
     const a = await connectClient(URL);
     const b = await connectClient(URL);
@@ -126,6 +126,7 @@ async function main() {
     b.emit('joinRoom', { room: 'post-42' });
     await wait(50);
 
+    // B leaves the room
     b.emit('leaveRoom', { room: 'post-42' });
     await wait(50);
 
@@ -141,9 +142,9 @@ async function main() {
     await wait(100);
   });
 
-  console.log('\\nTest 5: Server logs connection and disconnection');
+  console.log('\nTest 5: Server logs connection and disconnection');
   await test('Server logs [+] connected and [-] disconnected with socket.id', async () => {
-    logs.length = 0;
+    logs.length = 0;  // clear previous logs
     const a = await connectClient(URL);
     const id = a.id;
     await wait(50);
@@ -157,10 +158,11 @@ async function main() {
     assert(disconnectLog, `Expected a log line with '[-] disconnected' and socket.id '${id}'. Logs: ${JSON.stringify(logs)}`);
   });
 
+  // ── teardown ──────────────────────────────────────────────────────────────
   console.log = origLog;
   await new Promise((resolve) => httpServer.close(resolve));
 
-  console.log(`\\nResults: ${passed} passed, ${failed} failed`);
+  console.log(`\nResults: ${passed} passed, ${failed} failed`);
   if (failed === 0) {
     console.log('All tests passed! ✓');
   }
